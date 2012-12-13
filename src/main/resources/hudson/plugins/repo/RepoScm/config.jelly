@@ -42,6 +42,11 @@
 			   checked="${h.defaultToTrue(scm.quiet)}" />
 		</f:entry>
 
+		<f:entry title="Detach" help="/plugin/repo/help-detach.html">
+			<f:checkbox name="repo.detach"
+			   checked="${h.defaultToTrue(scm.detach)}" />
+		</f:entry>
+
 		<f:entry title="Local Manifest" help="/plugin/repo/help-localManifest.html">
 			<f:textarea name="repo.localManifest" value="${scm.localManifest}" rows="10" />
 		</f:entry>

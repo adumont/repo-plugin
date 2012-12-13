@@ -77,6 +77,7 @@ public class RepoScm extends SCM {
 	private final String destinationDir;
 	private final boolean currentBranch;
 	private final boolean quiet;
+	private final boolean detach;
 
 	/**
 	 * Returns the manifest repository URL.
@@ -148,6 +149,13 @@ public class RepoScm extends SCM {
 	}
 
 	/**
+	 * Returns the value of detach.
+	 */
+	public boolean isDetach() {
+		return detach;
+	}
+
+	/**
 	 * The constructor takes in user parameters and sets them. Each job using
 	 * the RepoSCM will call this constructor.
 	 *
@@ -180,13 +188,17 @@ public class RepoScm extends SCM {
 	 * @param quiet
 	 * 			  if this value is true,
 	 *            add "-q" options when excute "repo sync".
+	 * @param detach
+	 * 			  if this value is true,
+	 *            add "-d" options when excute "repo sync".
 	 */
 	@DataBoundConstructor
 	public RepoScm(final String manifestRepositoryUrl,
 			final String manifestBranch, final String manifestFile,
 			final String mirrorDir, final int jobs,
 			final String localManifest, final String destinationDir,
-			final boolean currentBranch, final boolean quiet) {
+			final boolean currentBranch, final boolean quiet,
+	                final boolean detach) {
 		this.manifestRepositoryUrl = manifestRepositoryUrl;
 		this.manifestBranch = Util.fixEmptyAndTrim(manifestBranch);
 		this.manifestFile = Util.fixEmptyAndTrim(manifestFile);
@@ -196,6 +208,7 @@ public class RepoScm extends SCM {
 		this.destinationDir = Util.fixEmptyAndTrim(destinationDir);
 		this.currentBranch = currentBranch;
 		this.quiet = quiet;
+		this.detach = detach;
 		// TODO: repoUrl
 		this.repoUrl = null;
 	}
@@ -300,6 +313,9 @@ public class RepoScm extends SCM {
 		commands.add(getDescriptor().getExecutable());
 		commands.add("sync");
 		commands.add("-d");
+		if (isDetach()) {
+			commands.add("-d");
+		}
 		if (isCurrentBranch()) {
 			commands.add("-c");
 		}
@@ -347,6 +363,7 @@ public class RepoScm extends SCM {
 		if (returnCode != 0) {
 			return false;
 		}
+
 		if (workspace != null) {
 			FilePath rdir = workspace.child(".repo");
 			FilePath lm = rdir.child("local_manifest.xml");
