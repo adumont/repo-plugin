@@ -78,6 +78,7 @@ public class RepoScm extends SCM {
 	private final boolean currentBranch;
 	private final boolean quiet;
 	private final boolean detach;
+	private final boolean skipInit;
 
 	/**
 	 * Returns the manifest repository URL.
@@ -156,6 +157,13 @@ public class RepoScm extends SCM {
 	}
 
 	/**
+	 * Returns the value of skipInit.
+	 */
+	public boolean isSkipInit() {
+		return skipInit;
+	}
+
+	/**
 	 * The constructor takes in user parameters and sets them. Each job using
 	 * the RepoSCM will call this constructor.
 	 *
@@ -191,6 +199,9 @@ public class RepoScm extends SCM {
 	 * @param detach
 	 * 			  if this value is true,
 	 *            add "-d" options when excute "repo sync".
+	 * @param skipInit
+	 * 			  if this value is true,
+	 *            will not run repo init before repo sync.
 	 */
 	@DataBoundConstructor
 	public RepoScm(final String manifestRepositoryUrl,
@@ -198,7 +209,7 @@ public class RepoScm extends SCM {
 			final String mirrorDir, final int jobs,
 			final String localManifest, final String destinationDir,
 			final boolean currentBranch, final boolean quiet,
-	                final boolean detach) {
+	                final boolean detach, final boolean skipInit) {
 		this.manifestRepositoryUrl = manifestRepositoryUrl;
 		this.manifestBranch = Util.fixEmptyAndTrim(manifestBranch);
 		this.manifestFile = Util.fixEmptyAndTrim(manifestFile);
@@ -209,6 +220,7 @@ public class RepoScm extends SCM {
 		this.currentBranch = currentBranch;
 		this.quiet = quiet;
 		this.detach = detach;
+		this.skipInit = skipInit;
 		// TODO: repoUrl
 		this.repoUrl = null;
 	}
@@ -335,34 +347,40 @@ public class RepoScm extends SCM {
 			final FilePath workspace, final OutputStream logger)
 			throws IOException, InterruptedException {
 		final List<String> commands = new ArrayList<String>(4);
+                int returnCode = 0;
 
 		debug.log(Level.INFO, "Checking out code in: " + workspace.getName());
 
-		commands.add(getDescriptor().getExecutable());
-		commands.add("init");
-		commands.add("-u");
-		commands.add(manifestRepositoryUrl);
-		if (manifestBranch != null) {
+		if (isSkipInit()) {
+		   debug.log(Level.INFO, "Initializing Repository - SKIPPED");
+                } else {
+		   debug.log(Level.INFO, "Initializing Repository...");
+		   commands.add(getDescriptor().getExecutable());
+		   commands.add("init");
+		   commands.add("-u");
+		   commands.add(manifestRepositoryUrl);
+		   if (manifestBranch != null) {
 			commands.add("-b");
 			commands.add(manifestBranch);
-		}
-		if (manifestFile != null) {
+		   }
+		   if (manifestFile != null) {
 			commands.add("-m");
 			commands.add(manifestFile);
-		}
-		if (mirrorDir != null) {
+		   }
+		   if (mirrorDir != null) {
 			commands.add("--reference=" + mirrorDir);
-		}
-		if (repoUrl != null) {
+		   }
+		   if (repoUrl != null) {
 			commands.add("--repo-url=" + repoUrl);
 			commands.add("--no-repo-verify");
-		}
-		int returnCode =
+		   }
+		   returnCode =
 				launcher.launch().stdout(logger).pwd(workspace)
 						.cmds(commands).join();
-		if (returnCode != 0) {
+		   if (returnCode != 0) {
 			return false;
-		}
+		   }
+                }
 
 		if (workspace != null) {
 			FilePath rdir = workspace.child(".repo");
